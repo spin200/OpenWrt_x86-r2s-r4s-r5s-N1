@@ -236,7 +236,13 @@ jobs:
             rm -rf staging_dir/!(*${{ env.MTARGET }}*|host|hostpkg) build_dir/!(*${{ env.MTARGET }}*|host|hostpkg)
         fi
         df -hT
-
+    - name: 下载FROS 路由系统源码  
+      run: |  
+          git clone https://github.com/openfros/fros.git  
+          cd fros  
+          ./scripts/feeds update -a  
+          ./scripts/feeds install -a
+          
     - name: SSH connection to Actions
       uses: kiddin9/debugger-action@master
       if: contains(github.event.action, 'ssh')
