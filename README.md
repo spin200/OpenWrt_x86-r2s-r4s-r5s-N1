@@ -108,19 +108,14 @@ X86/64, 友善 NanoPi、R2S、R4S、R4SE、R5S、R2C、R5C、R6S、NEO3, 斐讯 
 + DIY云编译教程参考: [Read the details in my blog (in Chinese) | 中文教程](https://p3terx.com/archives/build-openwrt-with-github-actions.html)
 
 + Actions页面选择 Repo Dispatcher 启动参数填 ssh 可以连接menuconfig手动配置  点击 Run workflow启动
-在触发工作流程后，在 Actions 日志页面等待执行到SSH connection to Actions步骤，会出现类似下面的信息：
-To connect to this session copy-n-paste the following into a terminal or browser:
-
-ssh Y26QeagDtsPXp2mT6me5cnMRd@nyc1.tmate.io
-
-https://tmate.io/t/Y26QeagDtsPXp2mT6me5cnMRd
-复制 SSH 连接命令粘贴到终端内执行，或者复制链接在浏览器中打开使用网页终端。（网页终端可能会遇到黑屏的情况，按 Ctrl+C 即可）
-
-cd openwrt && make menuconfig
-
-插件应用说明：https://www.right.com.cn/forum/thread-3682029-1-1.html
-完成后按Ctrl+D组合键或执行exit命令退出，后续编译工作将自动进行。
-
+ 在触发工作流程后，在 Actions 日志页面等待执行到SSH connection to Actions步骤，会出现类似下面的信息：
+ To connect to this session copy-n-paste the following into a terminal or browser:
+ ssh Y26QeagDtsPXp2mT6me5cnMRd@nyc1.tmate.io
+ https://tmate.io/t/Y26QeagDtsPXp2mT6me5cnMRd
+ 复制 SSH 连接命令粘贴到终端内执行，或者复制链接在浏览器中打开使用网页终端。（网页终端可能会遇到黑屏的情况，按 Ctrl+C 即可）Ctrl+D 退出
+ cd openwrt && make menuconfig
+ 插件应用说明：https://www.right.com.cn/forum/thread-3682029-1-1.html
+ 完成后按Ctrl+D组合键或执行exit命令退出，后续编译工作将自动进行。
 + 默认插件包含: Opkg 软件包管理、Bypass 智能过墙、Samba4 文件共享(x86)、UPNP 自动端口转发、Turbo ACC 网络加速。
 其他插件请自行在 后台->软件包 中安装,系统升级不会丢失插件.每次系统升级完成连接网络后,会自动安装所有已自选安装的插件。
 
