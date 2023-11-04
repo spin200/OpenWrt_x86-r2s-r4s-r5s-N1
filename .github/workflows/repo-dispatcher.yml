@@ -48,7 +48,7 @@ jobs:
         echo "REPO_URL=${REPO_URL}" >> $GITHUB_ENV
         echo "REPO_BRANCH=${REPO_BRANCH}" >> $GITHUB_ENV
 
-    - name: Trigger Packages Update
+    - name: 软件包更新
       run: |
         gitdate=$(curl -H "Authorization: token ${{ secrets.TOKEN_KIDDIN9 }}" -s "https://api.github.com/repos/kiddin9/openwrt-packages/actions/runs" | jq -r '.workflow_runs[0].created_at')
         # 检查 gitdate 是否有效  
@@ -79,8 +79,14 @@ jobs:
         else  
         echo "No update needed" 
         fi
-
-    - name: Trigger Compile
+    - name: SSH 连接操作
+      uses: P3TERX/ssh2actions@v1.0.0
+      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+      env:
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        
+    - name: 开始编译
       run: |
         sudo timedatectl set-timezone "$TZ"
           #  x86_64固件
