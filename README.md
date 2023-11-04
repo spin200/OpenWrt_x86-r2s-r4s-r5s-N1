@@ -57,7 +57,7 @@ X86/64, 友善 NanoPi、R2S、R4S、R4SE、R5S、R2C、R5C、R6S、NEO3, 斐讯 
 
 + 将仓库进行fork
 
-+ 按需添加相关环境参数REPO_TOKEN、SCKEY、TELEGRAM_CHAT_ID
++ 按需添加相关环境参数TOKEN_KIDDIN9、SCKEY、TELEGRAM_CHAT_ID
 
 + Actions页面选择 Repo Dispatcher 点击 Run workflow
 ### 2.3 **GitHub结合浏览器插件编译**
@@ -96,13 +96,14 @@ X86/64, 友善 NanoPi、R2S、R4S、R4SE、R5S、R2C、R5C、R6S、NEO3, 斐讯 
 
 + 第一次使用请采用全新安装,避免出现升级失败以及其他一些可能的Bug.
 
-+ 云编译需要 [在此](https://github.com/settings/tokens) 创建个token,然后在此仓库Settings->Secrets中添加个名字为REPO_TOKEN的Secret,填入token值,否者无法触发编译。
++ 云编译需要 [在此](https://github.com/settings/tokens) 创建个token,然后
++ 在此仓库Settings->Secrets and variables ->Actions中点击New repository secret添加个名字为TOKEN_KIDDIN9的Secret,填入token值,否者无法触发编译。
 
-+ 在仓库Settings->Secrets中分别添加 PPPOE_USERNAME, PPPOE_PASSWD 可设置默认拨号账号密码.有 [安全隐患](https://github.com/kiddin9/OpenWrt_x86-r2s-r4s/issues/23)。
++ 在仓库Settings->Secrets and variables ->Actions 中点击New repository secret分别添加 PPPOE_USERNAME, PPPOE_PASSWD 可设置默认拨号账号密码.有 [安全隐患](https://github.com/kiddin9/OpenWrt_x86-r2s-r4s/issues/23)。
 
-+ 在仓库Settings->Secrets中添加 SCKEY 可通过[Server酱](http://sc.ftqq.com) 推送编译结果到微信。
++ 在仓库Settings->Secrets and variables ->Actions 中点击New repository secret添加 SCKEY 可通过[Server酱](http://sc.ftqq.com) 推送编译结果到微信。
 
-+ 在仓库Settings->Secrets中添加 TELEGRAM_CHAT_ID, TELEGRAM_TOKEN 可推送编译结果到Telegram Bot. [教程](https://longnight.github.io/2018/12/12/Telegram-Bot-notifications)
++ 在仓库Settings->Secrets and variables ->Actions 中点击New repository secret添加 TELEGRAM_CHAT_ID, TELEGRAM_TOKEN 可推送编译结果到Telegram Bot. [教程](https://longnight.github.io/2018/12/12/Telegram-Bot-notifications)
 
 + DIY云编译教程参考: [Read the details in my blog (in Chinese) | 中文教程](https://p3terx.com/archives/build-openwrt-with-github-actions.html)
 
