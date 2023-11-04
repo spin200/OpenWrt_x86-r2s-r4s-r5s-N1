@@ -238,8 +238,8 @@ jobs:
         df -hT
     - name: 下载FROS 路由系统源码  
       run: |  
-          git clone https://github.com/openfros/fros.git  
-          cd fros  
+          git clone https://github.com/openfros/fros.git package/fros
+          cd package/fros  
           ./scripts/feeds update -a  
           ./scripts/feeds install -a
           
