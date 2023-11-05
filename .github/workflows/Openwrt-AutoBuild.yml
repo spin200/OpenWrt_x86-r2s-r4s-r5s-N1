@@ -44,7 +44,7 @@ jobs:
         # echo ${{ secrets.TELEGRAM_CHAT_ID }} | sed 's/./& /g'
         # echo ${{ secrets.TELEGRAM_TOKEN }} | sed 's/./& /g'
 
-    - name: Load Settings.ini
+    - name: 加载配置文件 Settings.ini
       run: |
         echo ${{matrix.target}}
         source "${GITHUB_WORKSPACE}/devices/common/settings.ini"
@@ -100,7 +100,7 @@ jobs:
           fi
         fi
 
-    - name: Trigger Packages Update
+    - name: 软件包更新
       continue-on-error: true
       run: |
         status=$(curl -H "Authorization: token ${{ secrets.TOKEN_KIDDIN9 }} -s "https://api.github.com/repos/kiddin9/openwrt-packages/actions/runs" | jq -r '.workflow_runs[0].status')
@@ -111,7 +111,7 @@ jobs:
           --data '{"event_type": "update"}'
         fi
 
-    - name: Initialization environment
+    - name: 初始化环境
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -128,7 +128,7 @@ jobs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-    - name: Get current date
+    - name: 获取当前日期
       id: date
       run: |
         echo "date=$(date +'%m/%d_%Y_%H/%M')" >> $GITHUB_ENV
@@ -136,7 +136,7 @@ jobs:
         VERSION="$(echo "${{github.event.action}}" | grep -Eo " [0-9.]+" | sed -e 's/ //')" || true
         [ "$VERSION" ] && echo "VERSION=$VERSION" >> $GITHUB_ENV || echo "VERSION=$(date +'%m.%d')" >> $GITHUB_ENV
 
-    - name: Clone source code
+    - name: 克隆源代码
       run: |
         REPO_BRANCH="$((curl -gs -H 'Content-Type: application/json' \
            -H "Authorization: Bearer ${{ secrets.TOKEN_KIDDIN9 }}" \
@@ -151,7 +151,7 @@ jobs:
             echo "git clone $REPO_URL -b ${{ env.REPO_BRANCH }} openwrt"
         fi
     
-    - name: Free up disk space
+    - name: 释放磁盘空间
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -160,7 +160,7 @@ jobs:
         ln -sf /mnt/openwrt/bin openwrt/bin
         ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
 
-    - name: Load custom configuration
+    - name: 加载自定义配置
       run: |
         cp -rf devices/common/. openwrt/
         cp -rf devices/${{matrix.target}}/. openwrt/
@@ -180,7 +180,7 @@ jobs:
           /bin/bash "devices/${{matrix.target}}/$DIY_SH"
         fi
 
-    - name: Apply patches
+    - name: 应用修补程序
       run: |
         cd openwrt
         find "devices/common/patches" -type f ! -name 'china_mirrors.patch' -name '*.patch' ! -name '*.revert.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -B --merge -p1 -E --forward"
@@ -213,14 +213,14 @@ jobs:
         fi
         cat .config
 
-    - name: Download package
+    - name: 下载软件包
       id: package
       run: |
         cd openwrt
         make download -j$(($(nproc)+1)) &
         sleep 5
 
-    - name: Cache
+    - name: 缓存
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
@@ -228,7 +228,7 @@ jobs:
         clean: ${{ contains(github.event.action, 'nocache') }}
         prefix: ${{ github.workspace }}/openwrt
     
-    - name: Check space usage
+    - name: 检查空间使用情况
       run: |
         shopt -s extglob
         cd openwrt
@@ -236,18 +236,11 @@ jobs:
             rm -rf staging_dir/!(*${{ env.MTARGET }}*|host|hostpkg) build_dir/!(*${{ env.MTARGET }}*|host|hostpkg)
         fi
         df -hT
-    - name: 下载FROS 路由系统源码  
-      run: |  
-          git clone https://github.com/openfros/fros.git package/fros
-          cd package/fros  
-          ./scripts/feeds update -a  
-          ./scripts/feeds install -a
-          
-    - name: SSH connection to Actions
+    - name: SSH连接到Actions操作
       uses: kiddin9/debugger-action@master
       if: contains(github.event.action, 'ssh')
 
-    - name: Compile the firmware
+    - name: 编译固件
       id: compile
       run: |
         shopt -s extglob
@@ -258,7 +251,7 @@ jobs:
         rm -rf staging_dir/toolchain-*/bin/*openwrt-linux-musl-lto-dump
         rm -rf staging_dir/toolchain-*/initial
 
-    - name: Organize files
+    - name: 组织文件
       id: organize
       continue-on-error: true
       run: |
@@ -282,7 +275,7 @@ jobs:
         echo "NOTICE=请分配不少于1G的存储容量" >> $GITHUB_ENV
         fi
 
-    - name: Deploy imagebuilder to server
+    - name: 将映像生成器部署到服务器
       uses: easingthemes/ssh-deploy@main
       continue-on-error: true
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
@@ -295,7 +288,7 @@ jobs:
         REMOTE_USER: root
         TARGET: "/www/wwwroot/op.supes.top/releases/tmp/"
 
-    - name: Upload firmware for artifact
+    - name: 上传工件的固件
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
       with:
@@ -303,7 +296,7 @@ jobs:
         path: |
           openwrt/bin/targets/
 
-    - name: Upload firmware to cowtransfer
+    - name: 上传固件到奶牛文件
       if: env.UPLOAD_FIRMWARE_TO_COWTRANSFER == 'true'
       continue-on-error: true
       run: |
@@ -313,7 +306,7 @@ jobs:
         echo "COWURL=$cowurl" >> $GITHUB_ENV
         echo "Download Link: ${{ env.EMOJI }} $cowurl ${{ env.EMOJI }} 🚀"
  
-    - name: Upload firmware to WeTransfer
+    - name: 将固件上传到WeTransfer
       if: env.UPLOAD_FIRMWARE_TO_WETRANSFER == 'true' && ! contains(github.event.action, 'noup')
       continue-on-error: true
       run: |
@@ -323,7 +316,7 @@ jobs:
         echo "WETRANS=$wetrans" >> $GITHUB_ENV
         echo "Download Link: ${{ env.EMOJI }} $wetrans ${{ env.EMOJI }} 🚀"
 
-    - name: Create release
+    - name: 创建发布
       id: create_release
       if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
       continue-on-error: true
@@ -334,7 +327,7 @@ jobs:
         [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
         [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
 
-    - name: Upload firmware for release
+    - name: 上传固件以供发布
       uses: softprops/action-gh-release@master
       continue-on-error: true
       if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
@@ -346,11 +339,11 @@ jobs:
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
       
-    - name: Set Up Docker Buildx
+    - name: 设置Docker Buildx
       uses: docker/setup-buildx-action@master
       if: env.DOCKER_ID && env.DOCKER_PASSWD
 
-    - name: Login To DockerHub
+    - name: 登录Docker Hub
       uses: docker/login-action@master
       if: env.DOCKER_ID && env.DOCKER_PASSWD
       with:
@@ -370,26 +363,26 @@ jobs:
           ${{ secrets.DOCKER_ID }}/openwrt-nginx:${{ matrix.target }}
           ${{ env.DOCKERTAG }}
     
-    - name: WeChat notification
+    - name: 微信通知
       continue-on-error: true
       if: env.SCKEY
       run: |
         # [ steps.compile.outputs.status == 'success' ] && curl https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send?text=🎉OpenWrt_${{ env.VERSION }}_${{matrix.target}}编译完成😋|| curl https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send?text=❌OpenWrt_${{ env.VERSION }}_${{matrix.target}}编译失败😂
 
-    - name: Telegram notification
+    - name: 电报通知
       if: env.TELEGRAM_TOKEN && ! contains(github.event.action, 'notg')
       continue-on-error: true
       run: |
         curl -k --data chat_id="${{ env.TELEGRAM_CHAT_ID }}" --data "text=🎉 OpenWrt ${{ env.VERSION }} ${{matrix.target}} 编译成功 😋  https://op.supes.top/firmware/${{matrix.target}}/  ${{ env.COWURL }}   ${{ env.WETRANS }} 🚀" "https://api.telegram.org/bot${{ env.TELEGRAM_TOKEN }}/sendMessage"
 
-    - name: Delete workflow runs
+    - name: 删除工作流运行
       uses: GitRML/delete-workflow-runs@main
       continue-on-error: true
       with:
         retain_days: 100
         keep_minimum_runs: 0
 
-    - name: Remove old Releases
+    - name: 删除旧版本
       uses: dev-drprasad/delete-older-releases@master
       continue-on-error: true
       if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
