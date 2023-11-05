@@ -112,9 +112,12 @@ X86/64, 友善 NanoPi、R2S、R4S、R4SE、R5S、R2C、R5C、R6S、NEO3, 斐讯 
  To connect to this session copy-n-paste the following into a terminal or browser:
  ssh Y26QeagDtsPXp2mT6me5cnMRd@nyc1.tmate.io
  https://tmate.io/t/Y26QeagDtsPXp2mT6me5cnMRd
- 复制 SSH 连接命令粘贴到终端内执行，或者复制链接在浏览器中打开使用网页终端。（网页终端可能会遇到黑屏的情况，按 Ctrl+C 即可）Ctrl+D 退出
-##**个性化定制**
+ 复制 SSH 连接命令粘贴到终端内执行，或者复制链接在浏览器中打开使用网页终端。
+（网页终端可能会遇到黑屏的情况，按 Ctrl+C 即可）退出Ctrl+D
+
++ ##**个性化定制**
  cd openwrt && make menuconfig
+
  插件应用说明：https://www.right.com.cn/forum/thread-3682029-1-1.html
  完成后按Ctrl+D组合键或执行exit命令退出，后续编译工作将自动进行。
 + 默认插件包含: Opkg 软件包管理、Bypass 智能过墙、Samba4 文件共享(x86)、UPNP 自动端口转发、Turbo ACC 网络加速。
