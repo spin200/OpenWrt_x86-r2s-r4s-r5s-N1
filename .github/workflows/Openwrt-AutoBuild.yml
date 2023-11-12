@@ -249,30 +249,41 @@ jobs:
         sed -i "s/# CONFIG_IB is not set/CONFIG_IB=y/" .config
         rm -rf staging_dir/toolchain-*/bin/*openwrt-linux-musl-lto-dump
         rm -rf staging_dir/toolchain-*/initial
+        echo "::set-output name=status::success"
 
-    - name: 组织文件
-      id: organize
-      continue-on-error: true
-      run: |
-        shopt -s extglob
-        mkdir -p firmware/${{matrix.target}}
-        cd openwrt; kernel_v="$(make --file=info.mk kernel_version)"; cd -
-        cp -rf openwrt/bin/targets/*/*/*{combined,sysupgrade}* ./firmware/${{matrix.target}}/ || true
-        cd openwrt/bin/targets/*/*/
-        mv -f profiles.json profiles.json.b || true
-        cp $GITHUB_WORKSPACE/openwrt/.config ${{matrix.target}}.config || true
-        cp $GITHUB_WORKSPACE/openwrt/build_dir/target-*/linux-*/linux-*/.config ${{matrix.target}}_kernel.config || true
-        cd -
-        rename -v "s/openwrt-/${{ env.VERSION }}-openwrt-/" ./firmware/*/* || true
-        rename -v "s/friendlyarm_//" ./firmware/*/*gz || true
-        rename -v "s/embedfire_//" ./firmware/*/*gz || true
-        rename -v "s/xiaomi_redmi-router/redmi/" ./firmware/*/*bin || true
-        Emoji=("🎉" "🤞" "✨" "🎁" "🎈" "🎄" "🎨" "💋" "🍓" "🍕" "🍉" "💐" "🌴" "🚀" "🛸" "🗽" "⛅" "🌈" "🔥" "⛄" "🐶" "🏅" "🦄" "🐤")
-        echo "EMOJI=${Emoji[$[$RANDOM % ${#Emoji[@]}]]}" >> $GITHUB_ENV
-        if [ ${{matrix.target}} == "x86_64" ]; then
-        echo "DOCKERTAG=${{ secrets.DOCKER_ID }}/openwrt-nginx:latest" >> $GITHUB_ENV
-        echo "NOTICE=请分配不少于1G的存储容量" >> $GITHUB_ENV
-        fi
+    # - name: 组织文件
+      # id: organize
+      # continue-on-error: true
+      # run: |
+        # shopt -s extglob
+        # mkdir -p firmware/${{matrix.target}}
+        # cd openwrt; kernel_v="$(make --file=info.mk kernel_version)"; cd -
+        # cp -rf openwrt/bin/targets/*/*/*{combined,sysupgrade}* ./firmware/${{matrix.target}}/ || true
+        # cd openwrt/bin/targets/*/*/
+        # mv -f profiles.json profiles.json.b || true
+        # cp $GITHUB_WORKSPACE/openwrt/.config ${{matrix.target}}.config || true
+        # cp $GITHUB_WORKSPACE/openwrt/build_dir/target-*/linux-*/linux-*/.config ${{matrix.target}}_kernel.config || true
+        # cd -
+        # rename -v "s/openwrt-/${{ env.VERSION }}-openwrt-/" ./firmware/*/* || true
+        # rename -v "s/friendlyarm_//" ./firmware/*/*gz || true
+        # rename -v "s/embedfire_//" ./firmware/*/*gz || true
+        # rename -v "s/xiaomi_redmi-router/redmi/" ./firmware/*/*bin || true
+        # Emoji=("🎉" "🤞" "✨" "🎁" "🎈" "🎄" "🎨" "💋" "🍓" "🍕" "🍉" "💐" "🌴" "🚀" "🛸" "🗽" "⛅" "🌈" "🔥" "⛄" "🐶" "🏅" "🦄" "🐤")
+        # echo "EMOJI=${Emoji[$[$RANDOM % ${#Emoji[@]}]]}" >> $GITHUB_ENV
+        # if [ ${{matrix.target}} == "x86_64" ]; then
+        # echo "DOCKERTAG=${{ secrets.DOCKER_ID }}/openwrt-nginx:latest" >> $GITHUB_ENV
+        # echo "NOTICE=请分配不少于1G的存储容量" >> $GITHUB_ENV
+        # fi
+    - name: 整理文件  
+      id: organize  
+      if: steps.compile.outputs.status == 'success'  
+      run: |  
+       mv openwrt/.config openwrt/bin/targets/*/*  
+       cd openwrt/bin/targets/*/*  
+       rm -rf packages  
+       rm -rf *uImage  
+       echo "FIRMWARE=$PWD" >> $GITHUB_ENV  
+       echo "::set-output name=status::success"
 
     - name: 将映像生成器部署到服务器
       uses: easingthemes/ssh-deploy@main
@@ -287,6 +298,8 @@ jobs:
         REMOTE_USER: root
         TARGET: "/www/wwwroot/op.supes.top/releases/tmp/"
 
+
+        
     - name: 上传工件的固件
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
