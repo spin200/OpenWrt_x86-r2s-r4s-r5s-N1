@@ -23,6 +23,18 @@ env:
   DOCKER_PASSWD: ${{ secrets.DOCKER_PASSWD }}
   UPLOAD_FIRMWARE_FOR_ARTIFACT: true
   UPLOAD_FIRMWARE_FOR_RELEASE: true
+  # 编译者
+  BUILD_USER: spin200
+  # 分支
+  BRANCH: Hiwifi_Hc5962-Lean
+     # 临时文件名称
+  DOWNLOAD_URL_FILE: Tmp-Link-Url.txt
+     # 固件标签
+  TARGET: ramips
+   # 固件版本
+  SUBTARGET: mt7621
+
+  
   TZ: Asia/Shanghai
 
 jobs:
@@ -149,7 +161,7 @@ jobs:
             git clone $REPO_URL -b ${{ env.REPO_BRANCH }} openwrt
             echo "git clone $REPO_URL -b ${{ env.REPO_BRANCH }} openwrt"
         fi
-    
+        echo "RELEASE_DATE=$(TZ=CST-8 date +"%Y.%m.%d-%H")" >> $GITHUB_ENV
     - name: 释放磁盘空间
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -284,6 +296,48 @@ jobs:
        rm -rf *uImage  
        echo "FIRMWARE=$PWD" >> $GITHUB_ENV  
        echo "::set-output name=status::success"
+       echo "DATE=$(TZ=CST-8 date "+%Y%m%d%H%M%S")" >> $GITHUB_ENV 
+ # 上传固件
+    - name: 上传固件
+      uses: actions/upload-artifact@master
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: ${{ env.BUILD_USER }}-${{ env.DATE }}-OpenWrt-${{ env.BRANCH }}-Firmware
+        path: ${{ env.FIRMWARE }}
+  # 上传下载地址文件
+    - name: 上传下载地址文件
+      uses: actions/upload-artifact@master
+      if: steps.compile.outputs.status == 'success'
+      with:
+        name: ${{ env.DOWNLOAD_URL_FILE }}
+        path: openwrt/bin/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${{ env.DOWNLOAD_URL_FILE }}
+ # 生成标签  
+    - name: 生成标签  
+      id: tag  
+      if: steps.compile.outputs.status == 'success'  
+      run: |  
+       echo "RELEASE_TAG=OpenWrt-${{ env.BRANCH }}-${{ env.RELEASE_DATE }}" >> $GITHUB_ENV  
+       echo "success" >> tag.log
+       echo "::set-output name=status::success"
+       
+    # 发行固件
+    - name: 发行固件
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{secrets.TOKEN_KIDDIN9 }}
+      with:
+        name: Netgear ${{ env.BRANCH }} 🚀 | 自动编译 / ${{ env.RELEASE_TAG }}
+        tag_name: ${{ env.RELEASE_TAG }}
+        body: |            
+            1、本固件为自动编译
+            2、发行版中只提供完整的固件
+            3、需要单独IPK请到分支下载
+            4、源码：${{ env.REPO_URL }}
+            -- Build by ${{ env.BUILD_USER }} @ with Github Action on ${{ env.RELEASE_TAG }}
+            🚀 Auto build | 自动编译      
+        files: ${{ env.FIRMWARE }}/*
+
 
     - name: 将映像生成器部署到服务器
       uses: easingthemes/ssh-deploy@main
