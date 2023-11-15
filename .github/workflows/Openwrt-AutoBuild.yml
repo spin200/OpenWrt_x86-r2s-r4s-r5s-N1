@@ -33,6 +33,10 @@ env:
   TARGET: ramips
    # 固件版本
   SUBTARGET: mt7621
+   #微信通知
+  SEND_WECHAT_MSG : true
+   # 发行固件地址
+  GITHUB_RELEASE: https://github.com/spin200/HC5962-OpenWrt/releases
 
   
   TZ: Asia/Shanghai
@@ -263,29 +267,7 @@ jobs:
         rm -rf staging_dir/toolchain-*/initial
         echo "::set-output name=status::success"
 
-    # - name: 组织文件
-      # id: organize
-      # continue-on-error: true
-      # run: |
-        # shopt -s extglob
-        # mkdir -p firmware/${{matrix.target}}
-        # cd openwrt; kernel_v="$(make --file=info.mk kernel_version)"; cd -
-        # cp -rf openwrt/bin/targets/*/*/*{combined,sysupgrade}* ./firmware/${{matrix.target}}/ || true
-        # cd openwrt/bin/targets/*/*/
-        # mv -f profiles.json profiles.json.b || true
-        # cp $GITHUB_WORKSPACE/openwrt/.config ${{matrix.target}}.config || true
-        # cp $GITHUB_WORKSPACE/openwrt/build_dir/target-*/linux-*/linux-*/.config ${{matrix.target}}_kernel.config || true
-        # cd -
-        # rename -v "s/openwrt-/${{ env.VERSION }}-openwrt-/" ./firmware/*/* || true
-        # rename -v "s/friendlyarm_//" ./firmware/*/*gz || true
-        # rename -v "s/embedfire_//" ./firmware/*/*gz || true
-        # rename -v "s/xiaomi_redmi-router/redmi/" ./firmware/*/*bin || true
-        # Emoji=("🎉" "🤞" "✨" "🎁" "🎈" "🎄" "🎨" "💋" "🍓" "🍕" "🍉" "💐" "🌴" "🚀" "🛸" "🗽" "⛅" "🌈" "🔥" "⛄" "🐶" "🏅" "🦄" "🐤")
-        # echo "EMOJI=${Emoji[$[$RANDOM % ${#Emoji[@]}]]}" >> $GITHUB_ENV
-        # if [ ${{matrix.target}} == "x86_64" ]; then
-        # echo "DOCKERTAG=${{ secrets.DOCKER_ID }}/openwrt-nginx:latest" >> $GITHUB_ENV
-        # echo "NOTICE=请分配不少于1G的存储容量" >> $GITHUB_ENV
-        # fi
+
     - name: 整理文件  
       id: organize  
       if: steps.compile.outputs.status == 'success'  
@@ -337,123 +319,13 @@ jobs:
             -- Build by ${{ env.BUILD_USER }} @ with Github Action on ${{ env.RELEASE_TAG }}
             🚀 Auto build | 自动编译      
         files: ${{ env.FIRMWARE }}/*
-
-
-    - name: 将映像生成器部署到服务器
-      uses: easingthemes/ssh-deploy@main
-      continue-on-error: true
-      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
-      with:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
-        SOURCE: openwrt/bin/targets
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        REMOTE_USER: root
-        TARGET: "/www/wwwroot/op.supes.top/releases/tmp/"
-
-
-        
-    - name: 上传工件的固件
-      uses: actions/upload-artifact@main
-      if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
-      with:
-        name: ${{ env.VERSION }}_${{matrix.target}}
-        path: |
-          openwrt/bin/targets/
-
-    - name: 上传固件到奶牛文件
-      if: env.UPLOAD_FIRMWARE_TO_COWTRANSFER == 'true'
-      continue-on-error: true
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        cowurl=$(./transfer cow --block 2621440 -s --no-progress ${FIRMWARE})
-        cowurl=$(echo $cowurl | grep -o -E "https[^ ]*")
-        echo "COWURL=$cowurl" >> $GITHUB_ENV
-        echo "Download Link: ${{ env.EMOJI }} $cowurl ${{ env.EMOJI }} 🚀"
- 
-    - name: 将固件上传到WeTransfer
-      if: env.UPLOAD_FIRMWARE_TO_WETRANSFER == 'true' && ! contains(github.event.action, 'noup')
-      continue-on-error: true
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        wetrans=$(./transfer wet -s -p 16 --no-progress ${FIRMWARE})
-        wetrans=$(echo $wetrans | grep -o -E "https[^ ]*")
-        echo "WETRANS=$wetrans" >> $GITHUB_ENV
-        echo "Download Link: ${{ env.EMOJI }} $wetrans ${{ env.EMOJI }} 🚀"
-
-    - name: 创建发布
-      id: create_release
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
-      continue-on-error: true
-      run: |
-        echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "[腾讯云] (https://op.supes.top/firmware/${{matrix.target}}/ ☁)\n" >> release.txt
-        [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
-        [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
-        [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
-
-    - name: 上传固件以供发布
-      uses: softprops/action-gh-release@master
-      continue-on-error: true
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
-      with:
-        files: "${{ env.FIRMWARE }}/*"
-        name: ${{ env.date2 }} ${{matrix.target}} ${{ env.EMOJI }}
-        tag_name: ${{ env.date }}_${{matrix.target}}
-        body_path: release.txt
-      
-    - name: 设置Docker Buildx
-      uses: docker/setup-buildx-action@master
-      if: env.DOCKER_ID && env.DOCKER_PASSWD
-
-    - name: 登录Docker Hub
-      uses: docker/login-action@master
-      if: env.DOCKER_ID && env.DOCKER_PASSWD
-      with:
-        username: ${{ secrets.DOCKER_ID }}
-        password: ${{ secrets.DOCKER_PASSWD }}
-
-    - name: Build and push docker image
-      uses: docker/build-push-action@master
-      continue-on-error: true
-      if: env.DOCKER_ID && env.DOCKER_PASSWD && ! contains(github.event.action, 'noser') && github.event.client_payload.target == 'x86_64'
-      with:
-        platforms: ${{ env.ARCH }}
-        file: Dockerfile
-        context: .
-        push: true
-        tags: |
-          ${{ secrets.DOCKER_ID }}/openwrt-nginx:${{ matrix.target }}
-          ${{ env.DOCKERTAG }}
-    
+# 微信通知
     - name: 微信通知
-      continue-on-error: true
-      if: env.SCKEY
-      run: |
-        # [ steps.compile.outputs.status == 'success' ] && curl https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send?text=🎉OpenWrt_${{ env.VERSION }}_${{matrix.target}}编译完成😋|| curl https://sctapi.ftqq.com/${{ secrets.SCKEY }}.send?text=❌OpenWrt_${{ env.VERSION }}_${{matrix.target}}编译失败😂
-
-    - name: 电报通知
-      if: env.TELEGRAM_TOKEN && ! contains(github.event.action, 'notg')
-      continue-on-error: true
-      run: |
-        curl -k --data chat_id="${{ env.TELEGRAM_CHAT_ID }}" --data "text=🎉 OpenWrt ${{ env.VERSION }} ${{matrix.target}} 编译成功 😋  https://op.supes.top/firmware/${{matrix.target}}/  ${{ env.COWURL }}   ${{ env.WETRANS }} 🚀" "https://api.telegram.org/bot${{ env.TELEGRAM_TOKEN }}/sendMessage"
-
-    - name: 删除工作流运行
-      uses: GitRML/delete-workflow-runs@main
-      continue-on-error: true
+      if: steps.compile.outputs.status == 'success' && env.SEND_WECHAT_MSG == 'true'
+      uses: emon100/Action-Serverchan@master
       with:
-        retain_days: 100
-        keep_minimum_runs: 0
+        sendkey: ${{ secrets.SCKEY }}
+        text: ${{ env.BRANCH }}固件编译完成！
+        desp: 固件名称:${{ env.BRANCH }} 固件地址:${{ env.GITHUB_RELEASE }}/tag/${{ env.RELEASE_TAG }}
 
-    - name: 删除旧版本
-      uses: dev-drprasad/delete-older-releases@master
-      continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 15
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
+    
