@@ -177,6 +177,10 @@ jobs:
         ln -sf /mnt/openwrt/bin openwrt/bin
         ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
 
+    - name: SSH连接到Actions操作1
+      uses: kiddin9/debugger-action@master
+      if: contains(github.event.action, 'ssh')    
+
     - name: 加载自定义配置
       run: |
         cp -rf devices/common/. openwrt/
@@ -196,6 +200,7 @@ jobs:
           echo "/bin/bash devices/${{matrix.target}}/$DIY_SH"
           /bin/bash "devices/${{matrix.target}}/$DIY_SH"
         fi
+     
 # 加载自定义脚本  
     - name: 加载自定义脚本
       run: |
