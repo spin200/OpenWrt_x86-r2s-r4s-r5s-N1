@@ -201,7 +201,7 @@ jobs:
     - name: 加载自定义脚本
       run: |
         chmod +x $DIY_P1_SH
-        cd openwrt
+        cd openwrt/scripts
         ../$DIY_P1_SH      
 
     - name: 应用修补程序
